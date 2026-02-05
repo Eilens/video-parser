@@ -253,12 +253,12 @@ function App() {
                       <div className="bg-black rounded-lg overflow-hidden aspect-video shadow-sm flex items-center justify-center">
                         {/* @ts-ignore */}
                         <video
+                          {...({ referrerPolicy: "no-referrer" } as any)}
                           controls
                           src={cachedVideo || result.video_url}
                           className="w-full h-full object-contain cursor-pointer"
                           poster={result.cover_url}
                           onClick={(e) => e.currentTarget.requestFullscreen()}
-                          referrerPolicy="no-referrer"
                         />
                       </div>
                       <div className="flex justify-end">
