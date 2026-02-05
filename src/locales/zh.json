@@ -1,0 +1,15 @@
+{
+    "app_title": "视频解析器",
+    "app_desc": "支持从抖音、小红书、微博、皮皮虾等平台提取高清视频和图片。",
+    "placeholder": "在此粘贴分享文本或链接...",
+    "parse_btn": "解析",
+    "parsing": "解析中...",
+    "download_video": "下载视频",
+    "download_image": "下载图片",
+    "gallery": "图集",
+    "cover_image": "封面图",
+    "toast_downloading": "正在下载...",
+    "toast_saved": "保存成功",
+    "error_download": "下载失败: {{error}}",
+    "uid": "UID"
+}

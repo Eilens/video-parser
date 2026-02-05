@@ -1,0 +1,15 @@
+{
+    "app_title": "Video Parser",
+    "app_desc": "Extract high-quality videos and images from Douyin, Xiaohongshu, Weibo, Pipixia, and more.",
+    "placeholder": "Paste share text or link here...",
+    "parse_btn": "Parse",
+    "parsing": "Parsing...",
+    "download_video": "Download Video",
+    "download_image": "Download",
+    "gallery": "Gallery",
+    "cover_image": "Cover Image",
+    "toast_downloading": "Downloading...",
+    "toast_saved": "Saved successfully",
+    "error_download": "Download failed: {{error}}",
+    "uid": "UID"
+}
