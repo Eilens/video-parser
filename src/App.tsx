@@ -2,12 +2,15 @@ import { useState, useEffect } from "react";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Loader2, Download, User, ImageIcon, Languages } from "lucide-react";
+import { Search, Loader2, Download, User, ImageIcon, Languages, Star, LogOut } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { useTranslation } from "react-i18next";
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
 import "./i18n";
+import Favorites from "./Favorites";
+import Login, { type UserInfo } from "./Login";
+import Profile from "./Profile";
 
 
 interface VideoParseInfo {
@@ -25,6 +28,10 @@ interface VideoParseInfo {
 
 function App() {
   const { t, i18n } = useTranslation();
+
+  // Auth state
+  const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
+
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<VideoParseInfo | null>(null);
@@ -35,6 +42,14 @@ function App() {
   const [proxiedAvatar, setProxiedAvatar] = useState<string | null>(null);
   // Cached video path for playback
   const [cachedVideo, setCachedVideo] = useState<string | null>(null);
+
+  // Favorites state
+  const [showFavorites, setShowFavorites] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [favRefreshKey, setFavRefreshKey] = useState(0);
+
+  // Profile state
+  const [showProfile, setShowProfile] = useState(false);
 
   // Update window title when language changes
   useEffect(() => {
@@ -88,17 +103,55 @@ function App() {
     setResult(null);
     setProxiedImages({});
     setProxiedAvatar(null);
+    setIsFavorited(false);
 
     try {
       const res = await invoke<VideoParseInfo>("parse_video", { url: targetUrl });
       setResult(res);
       // Update input if called programmatically
-      if (urlArg) setUrl(urlArg);
+      if (urlArg) setUrl(targetUrl);
+      // Check if this URL is already favorited
+      if (currentUser) {
+        const favorited = await invoke<boolean>("is_favorited", { userId: currentUser.id, url: targetUrl });
+        setIsFavorited(favorited);
+      }
     } catch (err: any) {
       console.error(err);
       setError(err as string);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!result || !currentUser) return;
+    const targetUrl = url;
+    try {
+      if (isFavorited) {
+        // Need to get favorites and find the matching one to remove
+        const favs = await invoke<any[]>("get_favorites", { userId: currentUser.id, platform: null });
+        const match = favs.find((f: any) => f.url === targetUrl);
+        if (match) {
+          await invoke("remove_favorite", { id: match.id });
+          setIsFavorited(false);
+          showToast(t('favorite_removed'), 'success');
+          setFavRefreshKey((k) => k + 1);
+        }
+      } else {
+        await invoke("add_favorite", {
+          userId: currentUser.id,
+          url: targetUrl,
+          title: result.title || '',
+          platform: result.platform || '',
+          coverUrl: result.cover_url || '',
+          authorName: result.author.name || '',
+        });
+        setIsFavorited(true);
+        showToast(t('favorite_added'), 'success');
+        setFavRefreshKey((k) => k + 1);
+      }
+    } catch (err) {
+      console.error('Failed to toggle favorite:', err);
     }
   };
 
@@ -156,19 +209,53 @@ function App() {
     i18n.changeLanguage(newLang);
   };
 
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setResult(null);
+    setUrl("");
+    setError(null);
+  };
+
+  // Show login page if not authenticated
+  if (!currentUser) {
+    return <Login onLoginSuccess={(user) => setCurrentUser(user)} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans flex flex-col items-center py-10 px-4 relative">
       <div className="w-full max-w-3xl space-y-8">
 
-        {/* Language Switcher */}
-        <div className="absolute top-4 right-4 md:right-0 md:top-0 md:relative md:flex md:justify-end">
+        {/* Top Bar: User info + Favorites + Language + Logout */}
+        <div className="absolute top-4 right-4 md:right-0 md:top-0 md:relative md:flex md:justify-end gap-2">
+          {/* Current user — clickable to open profile */}
+          <button
+            onClick={() => setShowProfile(true)}
+            className="bg-white p-2 rounded-lg shadow-sm hover:bg-blue-50 flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors cursor-pointer"
+            title={t('edit_profile')}
+          >
+            <User size={16} />
+            <span>{currentUser.username}</span>
+          </button>
+          <button
+            onClick={() => setShowFavorites(true)}
+            className="bg-white p-2 rounded-lg shadow-sm hover:bg-amber-50 flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-amber-600 transition-colors"
+          >
+            <Star size={18} />
+            <span>{t('favorites')}</span>
+          </button>
           <button
             onClick={toggleLanguage}
             className="bg-white p-2 rounded-lg shadow-sm hover:bg-gray-50 flex items-center gap-2 text-sm font-medium text-gray-600 transition-colors"
           >
             <Languages size={18} />
-            {/* Show current language */}
             <span>{i18n.language.startsWith('zh') ? '中文' : 'English'}</span>
+          </button>
+          <button
+            onClick={handleLogout}
+            className="bg-white p-2 rounded-lg shadow-sm hover:bg-red-50 flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-red-500 transition-colors"
+            title={t('logout')}
+          >
+            <LogOut size={18} />
           </button>
         </div>
 
@@ -253,10 +340,20 @@ function App() {
 
               {/* Media Content */}
               <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-                <div className="p-5 border-b border-gray-100">
-                  <p className="text-gray-800 text-lg leading-relaxed whitespace-pre-wrap">
+                <div className="p-5 border-b border-gray-100 flex items-start justify-between gap-3">
+                  <p className="text-gray-800 text-lg leading-relaxed whitespace-pre-wrap flex-1">
                     {result.title}
                   </p>
+                  <button
+                    onClick={handleToggleFavorite}
+                    className={`flex-shrink-0 p-2.5 rounded-xl transition-all ${isFavorited
+                      ? 'bg-amber-50 text-amber-500 hover:bg-amber-100'
+                      : 'bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-amber-500'
+                      }`}
+                    title={isFavorited ? t('remove_favorite') : t('add_favorite')}
+                  >
+                    <Star size={22} className={isFavorited ? 'fill-amber-500' : ''} />
+                  </button>
                 </div>
 
                 <div className="p-5 space-y-6">
@@ -351,6 +448,30 @@ function App() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Favorites Panel */}
+      <AnimatePresence>
+        <Favorites
+          visible={showFavorites}
+          onClose={() => setShowFavorites(false)}
+          onSelect={(selectedUrl) => {
+            setUrl(selectedUrl);
+            handleParse(selectedUrl);
+          }}
+          refreshKey={favRefreshKey}
+          userId={currentUser.id}
+        />
+      </AnimatePresence>
+
+      {/* Profile Modal */}
+      <AnimatePresence>
+        <Profile
+          visible={showProfile}
+          user={currentUser}
+          onClose={() => setShowProfile(false)}
+          onUpdated={(updatedUser) => setCurrentUser(updatedUser)}
+        />
+      </AnimatePresence>
     </div>
   );
 }

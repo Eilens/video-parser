@@ -1,9 +1,13 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 mod models;
 mod parser;
+mod db;
+mod favorites;
+mod auth;
 
 use crate::models::VideoParseInfo;
 use crate::parser::{douyin::DouYin, xhs::Xiaohongshu, pipixia::PiPiXia, weibo::Weibo, kuaishou::Kuaishou, bilibili::Bilibili, xigua::XiGua};
+use tauri::Manager;
 
 #[tauri::command]
 async fn parse_video(app: tauri::AppHandle, url: String) -> Result<VideoParseInfo, String> {
@@ -142,7 +146,25 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
-        .invoke_handler(tauri::generate_handler![parse_video, download_file, proxy_image, cache_video])
+        .setup(|app| {
+            let conn = db::init_db(&app.handle()).expect("Failed to initialize database");
+            app.manage(db::DbState(std::sync::Mutex::new(conn)));
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            parse_video,
+            download_file,
+            proxy_image,
+            cache_video,
+            favorites::add_favorite,
+            favorites::remove_favorite,
+            favorites::get_favorites,
+            favorites::is_favorited,
+            auth::register,
+            auth::login,
+            auth::update_profile,
+            auth::reset_password
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
