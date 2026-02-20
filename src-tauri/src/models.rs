@@ -14,6 +14,12 @@ pub struct ImgInfo {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct VideoQuality {
+    pub quality: String,
+    pub video_url: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VideoParseInfo {
     pub author: Author,
     pub title: String,
@@ -22,6 +28,7 @@ pub struct VideoParseInfo {
     pub cover_url: String,
     pub images: Vec<ImgInfo>,
     pub platform: String,
+    pub video_qualities: Vec<VideoQuality>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -106,6 +106,7 @@ impl Weibo {
             cover_url,
             images: vec![],
             platform: "weibo".to_string(),
+            video_qualities: vec![],
         })
     }
 
@@ -279,10 +280,11 @@ impl Weibo {
             },
             title,
             video_url,
-            music_url: String::new(),
             cover_url,
             images,
             platform: "weibo".to_string(),
+            music_url: "".to_string(),
+            video_qualities: vec![],
         })
     }
 
@@ -348,6 +350,7 @@ impl Weibo {
             cover_url: String::new(),
             images,
             platform: "weibo".to_string(),
+            video_qualities: vec![],
         })
     }
 

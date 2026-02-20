@@ -110,16 +110,29 @@ function App() {
   };
 
 
-  const handleDownload = async (fileUrl: string, type: 'video' | 'image', index?: number) => {
+  const handleDownload = async (fileUrl: string, type: 'video' | 'image' | 'audio', index?: number) => {
     try {
-      const ext = type === 'video' ? 'mp4' : 'jpeg';
+      // Auto-detect extension from URL for audio, fallback to defaults
+      let ext = { video: 'mp4', image: 'jpeg', audio: 'mp3' }[type];
+      if (type === 'audio' || type === 'video') {
+        try {
+          const urlPath = new URL(fileUrl).pathname;
+          const urlExt = urlPath.split('.').pop()?.toLowerCase();
+          if (urlExt && ['mp3', 'm4a', 'aac', 'wav', 'ogg', 'flac', 'mp4', 'mov', 'avi', 'mkv'].includes(urlExt)) {
+            ext = urlExt;
+          }
+        } catch { /* use default ext */ }
+      }
       const timestamp = new Date().getTime();
-      const defaultName = `douyin_${type}_${timestamp}${index !== undefined ? `_${index}` : ''}.${ext}`;
+      let safeTitle = result?.title ? result.title.replace(/[\\/:*?"<>|\r\n]/g, '').trim() : '';
+      if (safeTitle.length > 40) safeTitle = safeTitle.substring(0, 40);
+      const prefix = safeTitle ? `${safeTitle}_` : `${result?.platform || 'media'}_`;
+      const defaultName = `${prefix}${type}_${timestamp}${index !== undefined ? `_${index}` : ''}.${ext}`;
 
       const savePath = await save({
         defaultPath: defaultName,
         filters: [{
-          name: type === 'video' ? 'Video' : 'Image',
+          name: type === 'video' ? 'Video' : type === 'audio' ? 'Audio' : 'Image',
           extensions: [ext]
         }]
       });

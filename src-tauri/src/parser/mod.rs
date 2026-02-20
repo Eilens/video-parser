@@ -1,6 +1,9 @@
+pub mod bilibili;
 pub mod douyin;
-pub mod xhs;
-pub mod xb;
-pub mod utils;
+pub mod kuaishou;
 pub mod pipixia;
+pub mod utils;
 pub mod weibo;
+pub mod xb;
+pub mod xhs;
+pub mod xigua;

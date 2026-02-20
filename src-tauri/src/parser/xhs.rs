@@ -136,6 +136,7 @@ impl Xiaohongshu {
             music_url: "".to_string(),
             images,
             platform: "xhs".to_string(),
+            video_qualities: vec![],
         })
     }
 

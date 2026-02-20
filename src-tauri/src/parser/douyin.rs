@@ -82,7 +82,7 @@ impl DouYin {
     }
 
     async fn parse_video_id(video_id: &str) -> Result<VideoParseInfo> {
-        let req_url = format!("https://www.iesdouyin.com/share/video/{}", video_id);
+        let req_url = format!("https://www.douyin.com/share/video/{}", video_id);
         let client = Client::new();
         
         let res = client
@@ -134,7 +134,7 @@ impl DouYin {
                 let web_id = format!("75{}", utils::generate_fixed_length_numeric_id(15));
                 let a_bogus = utils::rand_seq(64);
                 let api_url = format!(
-                    "https://www.iesdouyin.com/web/api/v2/aweme/slidesinfo/?reflow_source=reflow_page&web_id={}&device_id={}&aweme_ids=%5B{}%5D&request_source=200&a_bogus={}",
+                    "https://www.douyin.com/web/api/v2/aweme/slidesinfo/?reflow_source=reflow_page&web_id={}&device_id={}&aweme_ids=%5B{}%5D&request_source=200&a_bogus={}",
                     web_id, web_id, video_id, a_bogus
                 );
                 
@@ -210,6 +210,7 @@ impl DouYin {
               cover_url,
               images,
               platform: "douyin".to_string(),
+              video_qualities: vec![],
           };
           
           if !result.video_url.is_empty() {
@@ -375,6 +376,7 @@ impl DouYin {
               cover_url,
               images,
               platform: "douyin".to_string(),
+              video_qualities: vec![],
           })
     }
 

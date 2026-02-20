@@ -161,10 +161,11 @@ impl PiPiXia {
             author,
             title,
             video_url,
-            music_url: String::new(),
             cover_url,
             images,
             platform: "pipixia".to_string(),
+            music_url: "".to_string(),
+            video_qualities: vec![],
         })
     }
 }

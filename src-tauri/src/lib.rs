@@ -3,7 +3,7 @@ mod models;
 mod parser;
 
 use crate::models::VideoParseInfo;
-use crate::parser::{douyin::DouYin, xhs::Xiaohongshu, pipixia::PiPiXia, weibo::Weibo};
+use crate::parser::{douyin::DouYin, xhs::Xiaohongshu, pipixia::PiPiXia, weibo::Weibo, kuaishou::Kuaishou, bilibili::Bilibili, xigua::XiGua};
 
 #[tauri::command]
 async fn parse_video(app: tauri::AppHandle, url: String) -> Result<VideoParseInfo, String> {
@@ -17,6 +17,12 @@ async fn parse_video(app: tauri::AppHandle, url: String) -> Result<VideoParseInf
         PiPiXia::parse_share_url(&url).await.map_err(|e| e.to_string())
     } else if url.contains("weibo.com") || url.contains("weibo.cn") {
         Weibo::parse_share_url(&url).await.map_err(|e| e.to_string())
+    } else if url.contains("kuaishou.com") || url.contains("chenzhongtech.com") {
+        Kuaishou::parse_share_url(&url).await.map_err(|e| e.to_string())
+    } else if url.contains("bilibili.com") || url.contains("b23.tv") {
+        Bilibili::parse_share_url(&url).await.map_err(|e| e.to_string())
+    } else if url.contains("ixigua.com") {
+        XiGua::parse_share_url(&url).await.map_err(|e| e.to_string())
     } else {
         Err("Unsupported URL".to_string())
     }
