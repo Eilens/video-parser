@@ -264,6 +264,30 @@ async fn cache_video(app: tauri::AppHandle, url: String) -> Result<String, Strin
     Ok(file_path.to_string_lossy().to_string())
 }
 
+#[tauri::command]
+async fn get_weather() -> Result<serde_json::Value, String> {
+    let url = "https://weathernew.pae.baidu.com/weathernew/pc?query=%E5%B1%B1%E4%B8%9C%E6%B5%8E%E5%AE%81%E5%A4%A9%E6%B0%94&srcid=4982&forecast=long_day_forecast";
+    let client = reqwest::Client::new();
+    let res = client.get(url)
+        .header("User-Agent", "Mozilla/5.0 (Macintosh; M1 Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    
+    let html = res.text().await.map_err(|e| e.to_string())?;
+    
+    let start_marker = "window.tplData = ";
+    if let Some(start_idx) = html.find(start_marker) {
+        let json_start = start_idx + start_marker.len();
+        if let Some(end_idx) = html[json_start..].find("};") {
+            let json_str = &html[json_start..json_start + end_idx + 1];
+            let parsed: serde_json::Value = serde_json::from_str(json_str).map_err(|e| e.to_string())?;
+            return Ok(parsed);
+        }
+    }
+    Err("Could not find weather data".to_string())
+}
+
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -292,7 +316,8 @@ pub fn run() {
             downloads::get_downloads,
             downloads::remove_download_record,
             open_path,
-            reveal_path
+            reveal_path,
+            get_weather
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Loader2, Download, User, ImageIcon, Languages, Star, LogOut, Copy } from "lucide-react";
+import { Search, Loader2, Download, User, ImageIcon, Languages, Star, LogOut, Copy, Clock, Cloud } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { useTranslation } from "react-i18next";
 import { PhotoProvider, PhotoView } from 'react-photo-view';
@@ -64,6 +64,26 @@ function App() {
 
   // Profile state
   const [showProfile, setShowProfile] = useState(false);
+
+  // Time state
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [weatherInfo, setWeatherInfo] = useState<{ temp: string; weather: string; city: string } | null>(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    // Fetch weather data
+    invoke<any>("get_weather").then(data => {
+      console.log("Weather data returned from Rust:", data);
+      if (data && data.weather) {
+        setWeatherInfo({
+          temp: data.weather.temperature,
+          weather: data.weather.weather,
+          city: data.position && data.position.city ? data.position.city : (data.city || '未知')
+        });
+      }
+    }).catch(err => console.error("Failed to fetch weather:", err));
+    return () => clearInterval(timer);
+  }, []);
 
   // Update window title when language changes
   useEffect(() => {
@@ -269,7 +289,23 @@ function App() {
       <div className="w-full max-w-3xl space-y-8">
 
         {/* Top Bar: User info + Favorites + Language + Logout */}
-        <div className="absolute top-4 right-4 md:right-0 md:top-0 md:relative md:flex md:justify-end gap-2">
+        <div className="absolute top-4 right-4 md:right-0 md:top-0 md:relative md:flex md:justify-end gap-2 items-center">
+          {/* Weather & Time */}
+          <div className="flex items-center gap-3 text-sm font-medium text-gray-600 mr-2 md:mr-4">
+            {weatherInfo && (
+              <div className="flex items-center gap-1" title={`${weatherInfo.city} ${weatherInfo.weather}`}>
+                <Cloud size={16} className="text-gray-500" />
+                <span>{weatherInfo.city} {weatherInfo.temp}°C {weatherInfo.weather}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1" title="Current Time">
+              <Clock size={16} className="text-gray-500" />
+              <span className="font-mono">
+                {`${currentTime.getFullYear()}-${(currentTime.getMonth() + 1).toString().padStart(2, '0')}-${currentTime.getDate().toString().padStart(2, '0')} ${currentTime.getHours().toString().padStart(2, '0')}:${currentTime.getMinutes().toString().padStart(2, '0')}:${currentTime.getSeconds().toString().padStart(2, '0')} ${['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][currentTime.getDay()]}`}
+              </span>
+            </div>
+          </div>
+
           {/* Current user — clickable to open profile */}
           <button
             onClick={() => setShowProfile(true)}
