@@ -80,5 +80,9 @@
     "delete_record_and_file": "Delete record & file",
     "delete_confirm_title": "Delete Download?",
     "copy_link": "Copy Link",
-    "copy_link_success": "Link copied to clipboard"
+    "copy_link_success": "Link copied to clipboard",
+    "settings": "Settings",
+    "light_mode": "Light Mode",
+    "dark_mode": "Dark Mode",
+    "system_mode": "System Default"
 }

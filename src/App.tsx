@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Loader2, Download, User, ImageIcon, Languages, Star, LogOut, Copy, Clock, Cloud } from "lucide-react";
+import { Search, Loader2, Download, User, ImageIcon, Languages, Star, LogOut, Copy, Clock, Cloud, Sun, Moon, Monitor, Settings, ChevronDown } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { useTranslation } from "react-i18next";
 import { PhotoProvider, PhotoView } from 'react-photo-view';
@@ -40,6 +40,37 @@ function App() {
   // Auth state
   const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
 
+  // Theme state
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
+    return (localStorage.getItem('theme') as 'light' | 'dark' | 'system') || 'system';
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const matcher = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const applyTheme = () => {
+      if (theme === 'dark' || (theme === 'system' && matcher.matches)) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    };
+
+    applyTheme();
+    localStorage.setItem('theme', theme);
+
+    // Listen for system preference changes if in system mode
+    if (theme === 'system') {
+      matcher.addEventListener('change', applyTheme);
+      return () => matcher.removeEventListener('change', applyTheme);
+    }
+  }, [theme]);
+
+  const cycleTheme = () => {
+    setTheme(prev => prev === 'system' ? 'light' : prev === 'light' ? 'dark' : 'system');
+  };
+
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<VideoParseInfo | null>(null);
@@ -62,8 +93,10 @@ function App() {
   // Downloads state
   const [showDownloads, setShowDownloads] = useState(false);
 
-  // Profile state
+  // Profile & Dropdown state
   const [showProfile, setShowProfile] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
 
   // Time state
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -285,83 +318,153 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 font-sans flex flex-col items-center py-10 px-4 relative">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans flex flex-col items-center py-10 px-4 relative transition-colors duration-200">
       <div className="w-full max-w-3xl space-y-8">
 
         {/* Top Bar: User info + Favorites + Language + Logout */}
-        <div className="absolute top-4 right-4 md:right-0 md:top-0 md:relative md:flex md:justify-end gap-2 items-center">
+        <div className="absolute top-4 right-4 md:right-0 md:top-0 md:relative flex flex-col items-end gap-2 w-full pr-4 md:pr-0 pointer-events-none">
           {/* Weather & Time */}
-          <div className="flex items-center gap-3 text-sm font-medium text-gray-600 mr-2 md:mr-4">
+          <div className="flex items-center gap-3 text-sm font-medium text-gray-600 dark:text-gray-400 pointer-events-auto">
             {weatherInfo && (
               <div className="flex items-center gap-1" title={`${weatherInfo.city} ${weatherInfo.weather}`}>
-                <Cloud size={16} className="text-gray-500" />
-                <span>{weatherInfo.city} {weatherInfo.temp}°C {weatherInfo.weather}</span>
+                <Cloud size={16} className="text-gray-500 dark:text-gray-400" />
+                <span className="hidden sm:inline">{weatherInfo.city} {weatherInfo.temp}°C {weatherInfo.weather}</span>
               </div>
             )}
             <div className="flex items-center gap-1" title="Current Time">
-              <Clock size={16} className="text-gray-500" />
-              <span className="font-mono">
+              <Clock size={16} className="text-gray-500 dark:text-gray-400" />
+              <span className="font-mono hidden sm:inline">
                 {`${currentTime.getFullYear()}-${(currentTime.getMonth() + 1).toString().padStart(2, '0')}-${currentTime.getDate().toString().padStart(2, '0')} ${currentTime.getHours().toString().padStart(2, '0')}:${currentTime.getMinutes().toString().padStart(2, '0')}:${currentTime.getSeconds().toString().padStart(2, '0')} ${['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][currentTime.getDay()]}`}
               </span>
             </div>
           </div>
 
-          {/* Current user — clickable to open profile */}
-          <button
-            onClick={() => setShowProfile(true)}
-            className="bg-white p-2 rounded-lg shadow-sm hover:bg-blue-50 flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors cursor-pointer"
-            title={t('edit_profile')}
-          >
-            <User size={16} />
-            <span>{currentUser.username}</span>
-          </button>
-          <button
-            onClick={() => setShowDownloads(true)}
-            className="bg-white p-2 rounded-lg shadow-sm hover:bg-green-50 flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-green-600 transition-colors"
-          >
-            <Download size={18} />
-            <span>{t('downloads')}</span>
-          </button>
-          <button
-            onClick={() => setShowFavorites(true)}
-            className="bg-white p-2 rounded-lg shadow-sm hover:bg-amber-50 flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-amber-600 transition-colors"
-          >
-            <Star size={18} />
-            <span>{t('favorites')}</span>
-          </button>
-          <button
-            onClick={toggleLanguage}
-            className="bg-white p-2 rounded-lg shadow-sm hover:bg-gray-50 flex items-center gap-2 text-sm font-medium text-gray-600 transition-colors"
-          >
-            <Languages size={18} />
-            <span>{i18n.language.startsWith('zh') ? '中文' : 'English'}</span>
-          </button>
-          <button
-            onClick={handleLogout}
-            className="bg-white p-2 rounded-lg shadow-sm hover:bg-red-50 flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-red-500 transition-colors"
-            title={t('logout')}
-          >
-            <LogOut size={18} />
-          </button>
+          {/* Action Buttons */}
+          <div className="flex items-center justify-end gap-2 flex-wrap pointer-events-auto">
+
+            <button
+              onClick={() => setShowDownloads(true)}
+              className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-sm hover:bg-green-50 dark:hover:bg-gray-700 flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <Download size={18} />
+              <span className="hidden sm:inline">{t('downloads')}</span>
+            </button>
+            <button
+              onClick={() => setShowFavorites(true)}
+              className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-sm hover:bg-amber-50 dark:hover:bg-gray-700 flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer whitespace-nowrap"
+            >
+              <Star size={18} />
+              <span className="hidden sm:inline">{t('favorites')}</span>
+            </button>
+
+            {/* Settings Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+                className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 transition-colors cursor-pointer whitespace-nowrap"
+                title={t('settings') || 'Settings'}
+              >
+                <Settings size={18} />
+                <span className="hidden sm:inline">{t('settings') || 'Settings'}</span>
+              </button>
+
+              <AnimatePresence>
+                {showSettingsMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowSettingsMenu(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50 text-gray-700 dark:text-gray-300 pointer-events-auto"
+                    >
+                      <div className="p-2 space-y-1">
+                        <button
+                          onClick={() => { cycleTheme(); setShowSettingsMenu(false); }}
+                          className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-sm transition-colors cursor-pointer"
+                        >
+                          {theme === 'light' ? <Sun size={16} /> : theme === 'dark' ? <Moon size={16} /> : <Monitor size={16} />}
+                          {theme === 'light' ? t('light_mode') || 'Light' : theme === 'dark' ? t('dark_mode') || 'Dark' : t('system_mode') || 'System'}
+                        </button>
+                        <button
+                          onClick={() => { toggleLanguage(); setShowSettingsMenu(false); }}
+                          className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-sm transition-colors cursor-pointer"
+                        >
+                          <Languages size={16} />
+                          {i18n.language.startsWith('zh') ? 'English' : '中文'}
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* User Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-sm hover:bg-blue-50 dark:hover:bg-gray-700 flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <User size={16} />
+                <span className="hidden sm:inline">{currentUser.username}</span>
+                <ChevronDown size={14} className="ml-0.5 opacity-70 hidden sm:block" />
+              </button>
+
+              <AnimatePresence>
+                {showUserMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50 text-gray-700 dark:text-gray-300 pointer-events-auto"
+                    >
+                      <div className="p-2 space-y-1">
+                        <button
+                          onClick={() => { setShowProfile(true); setShowUserMenu(false); }}
+                          className="w-full text-left px-3 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg flex items-center gap-3 text-sm transition-colors cursor-pointer"
+                        >
+                          <User size={16} />
+                          {t('edit_profile')}
+                        </button>
+                        <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
+                        <button
+                          onClick={() => { handleLogout(); setShowUserMenu(false); }}
+                          className="w-full text-left px-3 py-2 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700 rounded-lg flex items-center gap-3 text-sm transition-colors cursor-pointer"
+                        >
+                          <LogOut size={16} />
+                          {t('logout')}
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
         </div>
 
         {/* Header */}
-        <div className="text-center space-y-3 mt-8 md:mt-0">
+        <div className="text-center space-y-3 mt-16 md:mt-0">
           <h1 className="text-3xl md:text-4xl font-extrabold text-blue-600 tracking-tight">
             {t('app_title')}
           </h1>
-          <p className="text-gray-600 max-w-lg mx-auto">
+          <p className="text-gray-600 dark:text-gray-400 max-w-lg mx-auto relative z-10 drop-shadow-sm">
             {t('app_desc')}
           </p>
         </div>
 
         {/* Search Input */}
-        <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-200 flex flex-col md:flex-row items-center gap-3">
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col md:flex-row items-center gap-3 relative z-10 transition-colors duration-200">
           <div className="flex-1 w-full relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
             <input
               type="text"
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400 text-gray-800"
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-gray-100"
               placeholder={t('placeholder')}
               value={url}
               onChange={(e) => setUrl(e.target.value)}
@@ -391,7 +494,7 @@ function App() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200 text-center font-medium shadow-sm"
+              className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-4 rounded-lg border border-red-200 dark:border-red-800 text-center font-medium shadow-sm transition-colors"
             >
               {error}
             </motion.div>
@@ -407,7 +510,7 @@ function App() {
             >
               {/* Author Card */}
               <div
-                className="bg-white p-5 rounded-xl shadow-md border border-gray-100 flex items-center gap-4"
+                className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 flex items-center gap-4 transition-colors"
               >
                 <img
                   src={result.platform === 'weibo' && proxiedAvatar ? proxiedAvatar : result.author.avatar}
@@ -416,25 +519,25 @@ function App() {
                   referrerPolicy="no-referrer"
                 />
                 <div className="flex-1">
-                  <h3 className="font-bold text-xl text-gray-800 flex items-center gap-2">
+                  <h3 className="font-bold text-xl text-gray-800 dark:text-gray-100 flex items-center gap-2">
                     {result.author.name}
                     <User size={16} className="text-gray-400" />
                   </h3>
-                  <p className="text-gray-500 text-sm font-mono">{t('uid')}: {result.author.uid}</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm font-mono">{t('uid')}: {result.author.uid}</p>
                 </div>
               </div>
 
               {/* Media Content */}
-              <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-                <div className="p-5 border-b border-gray-100 flex items-start justify-between gap-3">
-                  <p className="text-gray-800 text-lg leading-relaxed whitespace-pre-wrap flex-1">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors">
+                <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex items-start justify-between gap-3 transition-colors">
+                  <p className="text-gray-800 dark:text-gray-200 text-lg leading-relaxed whitespace-pre-wrap flex-1">
                     {result.title}
                   </p>
                   <button
                     onClick={handleToggleFavorite}
                     className={`flex-shrink-0 p-2.5 rounded-xl transition-all ${isFavorited
-                      ? 'bg-amber-50 text-amber-500 hover:bg-amber-100'
-                      : 'bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-amber-500'
+                      ? 'bg-amber-50 dark:bg-amber-900/40 text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/60'
+                      : 'bg-gray-50 dark:bg-gray-700 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-amber-500 dark:hover:text-amber-400'
                       }`}
                     title={isFavorited ? t('remove_favorite') : t('add_favorite')}
                   >
@@ -457,13 +560,13 @@ function App() {
                           onClick={(e) => e.currentTarget.requestFullscreen()}
                         />
                       </div>
-                      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50 dark:bg-gray-800/80 p-4 rounded-xl border border-gray-100 dark:border-gray-700 transition-colors">
                         <div className="flex items-center gap-3 w-full sm:w-auto">
                           {result.video_qualities && result.video_qualities.length > 0 ? (
                             <select
                               value={selectedQualityUrl || ''}
                               onChange={(e) => setSelectedQualityUrl(e.target.value)}
-                              className="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full sm:w-auto p-2.5 outline-none shadow-sm cursor-pointer"
+                              className="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full sm:w-auto p-2.5 outline-none shadow-sm cursor-pointer transition-colors"
                             >
                               {result.video_qualities.map((q: VideoQuality, idx: number) => (
                                 <option key={idx} value={q.video_url}>
@@ -472,20 +575,20 @@ function App() {
                               ))}
                             </select>
                           ) : (
-                            <span className="text-gray-500 text-sm font-medium">{t('video_quality_default')}</span>
+                            <span className="text-gray-500 dark:text-gray-400 text-sm font-medium">{t('video_quality_default')}</span>
                           )}
                         </div>
                         <div className="flex items-center gap-2 w-full sm:w-auto">
                           <button
                             onClick={() => handleCopyUrl(selectedQualityUrl || result.video_url)}
-                            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-lg font-semibold transition-colors shadow-sm border border-gray-200"
+                            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2.5 rounded-lg font-semibold transition-colors shadow-sm border border-gray-200 dark:border-gray-600"
                           >
                             <Copy size={18} />
                             <span>{t('copy_link')}</span>
                           </button>
                           <button
                             onClick={() => handleDownload(selectedQualityUrl || result.video_url, 'video')}
-                            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors shadow-md"
+                            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors shadow-md cursor-pointer"
                           >
                             <Download size={18} />
                             <span>{t('download_video')}</span>
@@ -497,8 +600,8 @@ function App() {
 
                   {/* Image Gallery */}
                   {result.images.length > 0 && (
-                    <div className="space-y-4">
-                      <h3 className="font-semibold text-gray-700 flex items-center gap-2">
+                    <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                      <h3 className="font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                         <ImageIcon size={20} />
                         <span>{t('gallery')} ({result.images.length})</span>
                       </h3>
@@ -506,7 +609,7 @@ function App() {
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                           {result.images.map((img, idx) => (
                             <PhotoView key={idx} src={proxiedImages[idx] || img.url}>
-                              <div className="relative group rounded-lg overflow-hidden aspect-[3/4] shadow-sm border border-gray-200 cursor-zoom-in">
+                              <div className="relative group rounded-lg overflow-hidden aspect-[3/4] shadow-sm border border-gray-200 dark:border-gray-700 cursor-zoom-in">
                                 <img
                                   src={proxiedImages[idx] || img.url}
                                   alt={`Gallery ${idx}`}
@@ -519,7 +622,7 @@ function App() {
                                       e.stopPropagation();
                                       handleCopyUrl(img.url);
                                     }}
-                                    className="bg-white text-gray-900 py-2 px-4 rounded-full font-bold text-sm shadow-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                    className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-2 px-4 rounded-full font-bold text-sm shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 cursor-pointer"
                                   >
                                     <Copy size={14} />
                                     {t('copy_link')}
@@ -529,7 +632,7 @@ function App() {
                                       e.stopPropagation(); // Prevent opening zoom when clicking download
                                       handleDownload(img.url, 'image', idx);
                                     }}
-                                    className="bg-white text-gray-900 py-2 px-4 rounded-full font-bold text-sm shadow-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                    className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-2 px-4 rounded-full font-bold text-sm shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 cursor-pointer"
                                   >
                                     <Download size={14} />
                                     {t('download_image')}
@@ -545,9 +648,9 @@ function App() {
 
                   {/* Cover Image Fallback */}
                   {result.cover_url && !result.video_url && result.images.length === 0 && (
-                    <div className="space-y-4">
-                      <h3 className="font-semibold text-gray-700">{t('cover_image')}</h3>
-                      <img src={result.cover_url} className="rounded-lg w-full max-w-md shadow-md border border-gray-200" />
+                    <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                      <h3 className="font-semibold text-gray-700 dark:text-gray-300">{t('cover_image')}</h3>
+                      <img src={result.cover_url} className="rounded-lg w-full max-w-md shadow-md border border-gray-200 dark:border-gray-700" />
                     </div>
                   )}
                 </div>

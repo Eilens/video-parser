@@ -142,18 +142,17 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center px-4">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 dark:from-gray-900 via-white dark:via-gray-800 to-indigo-50 dark:to-gray-900 flex items-center justify-center px-4 transition-colors duration-300">
             {/* Background decoration */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-200 rounded-full opacity-20 blur-3xl" />
                 <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-200 rounded-full opacity-20 blur-3xl" />
             </div>
 
-            {/* Language Switcher */}
             <div className="absolute top-4 right-4">
                 <button
                     onClick={toggleLanguage}
-                    className="bg-white p-2 rounded-lg shadow-sm hover:bg-gray-50 flex items-center gap-2 text-sm font-medium text-gray-600 transition-colors"
+                    className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 transition-colors cursor-pointer"
                 >
                     <Languages size={18} />
                     <span>{i18n.language.startsWith("zh") ? "中文" : "English"}</span>
@@ -172,16 +171,16 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                         initial={{ scale: 0.8 }}
                         animate={{ scale: 1 }}
                         transition={{ delay: 0.1, type: "spring" }}
-                        className="inline-flex items-center justify-center w-20 h-20 mb-4 bg-white rounded-3xl shadow-xl shadow-blue-100/50 p-2 overflow-hidden border border-gray-100"
+                        className="inline-flex items-center justify-center w-20 h-20 mb-4 bg-white dark:bg-gray-800 rounded-3xl shadow-xl shadow-blue-100/50 dark:shadow-none p-2 overflow-hidden border border-gray-100 dark:border-gray-700 transition-colors"
                     >
                         <img src="/icon.png" alt="Logo" className="w-full h-full object-contain" />
                     </motion.div>
-                    <h1 className="text-2xl font-bold text-gray-800">{t("app_title")}</h1>
-                    <p className="text-gray-500 text-sm mt-1">{t("app_desc")}</p>
+                    <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 transition-colors">{t("app_title")}</h1>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1 transition-colors">{t("app_desc")}</p>
                 </div>
 
                 {/* Card */}
-                <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-8">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-700 p-8 transition-colors duration-300">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={mode}
@@ -194,14 +193,14 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                             {mode === "forgot" && (
                                 <button
                                     onClick={() => switchMode("login")}
-                                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-blue-600 mb-4 transition-colors"
+                                    className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 mb-4 transition-colors cursor-pointer"
                                 >
                                     <ArrowLeft size={16} />
                                     {t("back_to_login")}
                                 </button>
                             )}
 
-                            <h2 className="text-xl font-bold text-gray-800 mb-6">
+                            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-6 transition-colors">
                                 {getTitle()}
                             </h2>
 
@@ -214,7 +213,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                                         placeholder={t("username")}
                                         value={username}
                                         onChange={(e) => setUsername(e.target.value)}
-                                        className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400 text-gray-800"
+                                        className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-gray-100"
                                     />
                                 </div>
 
@@ -233,7 +232,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                                                 placeholder={t("email")}
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
-                                                className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400 text-gray-800"
+                                                className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-gray-100"
                                             />
                                         </motion.div>
                                     )}
@@ -249,7 +248,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                                                 placeholder={t("password")}
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
-                                                className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400 text-gray-800"
+                                                className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-gray-100"
                                             />
                                         </div>
 
@@ -261,9 +260,9 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                                                     type="checkbox"
                                                     checked={rememberMe}
                                                     onChange={(e) => setRememberMe(e.target.checked)}
-                                                    className="w-4 h-4 text-blue-600 bg-gray-50 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                                                    className="w-4 h-4 text-blue-600 bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer transition-colors"
                                                 />
-                                                <label htmlFor="remember-me" className="ml-2 text-sm text-gray-600 cursor-pointer select-none">
+                                                <label htmlFor="remember-me" className="ml-2 text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none transition-colors">
                                                     {t("remember_me")}
                                                 </label>
                                             </div>
@@ -280,7 +279,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                                             placeholder={t("new_password")}
                                             value={newPassword}
                                             onChange={(e) => setNewPassword(e.target.value)}
-                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400 text-gray-800"
+                                            className="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-gray-100"
                                         />
                                     </div>
                                 )}
@@ -291,7 +290,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                                         <button
                                             type="button"
                                             onClick={() => switchMode("forgot")}
-                                            className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                                            className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors cursor-pointer"
                                         >
                                             {t("forgot_password")}
                                         </button>
@@ -305,7 +304,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                                             initial={{ opacity: 0, y: -5 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -5 }}
-                                            className="text-red-500 text-sm bg-red-50 px-4 py-2.5 rounded-lg border border-red-100"
+                                            className="text-red-500 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/30 px-4 py-2.5 rounded-lg border border-red-100 dark:border-red-800"
                                         >
                                             {error}
                                         </motion.div>
@@ -319,7 +318,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                                             initial={{ opacity: 0, y: -5 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -5 }}
-                                            className="text-green-700 text-sm bg-green-50 px-4 py-2.5 rounded-lg border border-green-100"
+                                            className="text-green-700 dark:text-green-400 text-sm bg-green-50 dark:bg-green-900/30 px-4 py-2.5 rounded-lg border border-green-100 dark:border-green-800"
                                         >
                                             {success}
                                         </motion.div>
@@ -330,7 +329,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 px-6 rounded-xl shadow-md shadow-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 px-6 rounded-xl shadow-md shadow-blue-200 dark:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
                                 >
                                     {loading ? (
                                         <Loader2 className="animate-spin" size={20} />
@@ -347,11 +346,11 @@ export default function Login({ onLoginSuccess }: LoginProps) {
 
                     {/* Toggle login/register */}
                     {mode !== "forgot" && (
-                        <div className="mt-6 text-center text-sm text-gray-500">
+                        <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400 transition-colors">
                             <span>{mode === "register" ? t("has_account") : t("no_account")}</span>
                             <button
                                 onClick={() => switchMode(mode === "register" ? "login" : "register")}
-                                className="ml-1 text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+                                className="ml-1 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold transition-colors cursor-pointer"
                             >
                                 {mode === "register" ? t("go_login") : t("go_register")}
                             </button>

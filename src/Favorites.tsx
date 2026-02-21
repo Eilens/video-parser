@@ -104,33 +104,33 @@ export default function Favorites({ visible, onClose, onSelect, refreshKey, user
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ type: "spring", duration: 0.4 }}
-        className="bg-white rounded-2xl shadow-2xl w-[90vw] max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-[90vw] max-w-2xl max-h-[80vh] flex flex-col overflow-hidden transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 transition-colors">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2 transition-colors">
             <Star size={22} className="text-amber-500 fill-amber-500" />
             {t("favorites_title")}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors cursor-pointer"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Platform Tabs */}
-        <div className="px-4 py-3 border-b border-gray-100 overflow-x-auto">
+        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 overflow-x-auto transition-colors">
           <div className="flex gap-2 min-w-max">
             {PLATFORMS.map((p) => (
               <button
                 key={p.key}
                 onClick={() => setActivePlatform(p.key)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${activePlatform === p.key
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${activePlatform === p.key
                   ? "bg-blue-600 text-white shadow-md"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                   }`}
               >
                 {t(p.i18nKey)}
@@ -161,7 +161,7 @@ export default function Favorites({ visible, onClose, onSelect, refreshKey, user
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -100 }}
                   onClick={() => handleSelect(fav.url)}
-                  className="flex items-center gap-4 p-4 bg-gray-50 hover:bg-blue-50 rounded-xl border border-gray-100 hover:border-blue-200 cursor-pointer transition-all group"
+                  className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-gray-600 cursor-pointer transition-all group"
                 >
                   {/* Cover thumbnail */}
                   {fav.cover_url ? (
@@ -172,14 +172,14 @@ export default function Favorites({ visible, onClose, onSelect, refreshKey, user
                       referrerPolicy="no-referrer"
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-lg bg-gray-200 flex-shrink-0 flex items-center justify-center">
-                      <ExternalLink size={20} className="text-gray-400" />
+                    <div className="w-16 h-16 rounded-lg bg-gray-200 dark:bg-gray-700 flex-shrink-0 flex items-center justify-center transition-colors">
+                      <ExternalLink size={20} className="text-gray-400 dark:text-gray-500" />
                     </div>
                   )}
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate transition-colors">
                       {fav.title || fav.url}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
@@ -190,7 +190,7 @@ export default function Favorites({ visible, onClose, onSelect, refreshKey, user
                         {fav.platform}
                       </span>
                       {fav.author_name && (
-                        <span className="text-xs text-gray-500 truncate">
+                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate transition-colors">
                           {fav.author_name}
                         </span>
                       )}
@@ -200,7 +200,7 @@ export default function Favorites({ visible, onClose, onSelect, refreshKey, user
                   {/* Delete button */}
                   <button
                     onClick={(e) => handleRemove(fav.id, e)}
-                    className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
+                    className="p-2 rounded-lg text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0 cursor-pointer"
                     title={t("remove_favorite")}
                   >
                     <Trash2 size={18} />

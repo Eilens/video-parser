@@ -80,5 +80,9 @@
     "delete_record_and_file": "删除记录及文件",
     "delete_confirm_title": "确认删除？",
     "copy_link": "复制链接",
-    "copy_link_success": "链接已复制"
+    "copy_link_success": "链接已复制",
+    "settings": "设置",
+    "light_mode": "亮色模式",
+    "dark_mode": "暗色模式",
+    "system_mode": "跟随系统"
 }

@@ -74,15 +74,15 @@ export default function Profile({ visible, user, onClose, onUpdated }: ProfilePr
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ type: "spring", duration: 0.4 }}
-                className="bg-white rounded-2xl shadow-2xl w-[90vw] max-w-md overflow-hidden"
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-[90vw] max-w-md overflow-hidden transition-colors"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-                    <h2 className="text-xl font-bold text-gray-800">{t("edit_profile")}</h2>
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 transition-colors">
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 transition-colors">{t("edit_profile")}</h2>
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+                        className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors cursor-pointer"
                     >
                         <X size={20} />
                     </button>
@@ -91,18 +91,18 @@ export default function Profile({ visible, user, onClose, onUpdated }: ProfilePr
                 <form onSubmit={handleSave} className="p-6 space-y-5">
                     {/* Current email (read-only) */}
                     <div>
-                        <label className="text-sm font-medium text-gray-500 mb-1.5 flex items-center gap-1.5">
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1.5 flex items-center gap-1.5 transition-colors">
                             <Mail size={14} />
                             {t("current_email")}
                         </label>
-                        <div className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600">
+                        <div className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-600 dark:text-gray-300 transition-colors">
                             {user.email}
                         </div>
                     </div>
 
                     {/* New username */}
                     <div>
-                        <label className="text-sm font-medium text-gray-500 mb-1.5 flex items-center gap-1.5">
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1.5 flex items-center gap-1.5 transition-colors">
                             <User size={14} />
                             {t("new_username")}
                         </label>
@@ -111,14 +111,14 @@ export default function Profile({ visible, user, onClose, onUpdated }: ProfilePr
                             placeholder={user.username}
                             value={newUsername}
                             onChange={(e) => setNewUsername(e.target.value)}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400 text-gray-800"
+                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-gray-100"
                         />
-                        <p className="text-xs text-gray-400 mt-1">{t("leave_empty_keep")}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 transition-colors">{t("leave_empty_keep")}</p>
                     </div>
 
                     {/* New password */}
                     <div>
-                        <label className="text-sm font-medium text-gray-500 mb-1.5 flex items-center gap-1.5">
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1.5 flex items-center gap-1.5 transition-colors">
                             <Lock size={14} />
                             {t("change_password")}
                         </label>
@@ -127,9 +127,9 @@ export default function Profile({ visible, user, onClose, onUpdated }: ProfilePr
                             placeholder="••••••••"
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400 text-gray-800"
+                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400 dark:placeholder-gray-500 text-gray-800 dark:text-gray-100"
                         />
-                        <p className="text-xs text-gray-400 mt-1">{t("leave_empty_keep")}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 transition-colors">{t("leave_empty_keep")}</p>
                     </div>
 
                     {/* Message */}
@@ -139,9 +139,9 @@ export default function Profile({ visible, user, onClose, onUpdated }: ProfilePr
                                 initial={{ opacity: 0, y: -5 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -5 }}
-                                className={`text-sm px-4 py-2.5 rounded-lg border ${message.type === "success"
-                                        ? "text-green-700 bg-green-50 border-green-100"
-                                        : "text-red-500 bg-red-50 border-red-100"
+                                className={`text-sm px-4 py-2.5 rounded-lg border transition-colors ${message.type === "success"
+                                    ? "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 border-green-100 dark:border-green-800"
+                                    : "text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border-red-100 dark:border-red-800"
                                     }`}
                             >
                                 {message.text}
@@ -153,7 +153,7 @@ export default function Profile({ visible, user, onClose, onUpdated }: ProfilePr
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 px-6 rounded-xl shadow-md shadow-blue-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 px-6 rounded-xl shadow-md shadow-blue-200 dark:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
                     >
                         {loading ? (
                             <Loader2 className="animate-spin" size={20} />
