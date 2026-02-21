@@ -78,5 +78,7 @@
     "open_folder": "在文件夹中显示",
     "delete_record_only": "仅删除记录",
     "delete_record_and_file": "删除记录及文件",
-    "delete_confirm_title": "确认删除？"
+    "delete_confirm_title": "确认删除？",
+    "copy_link": "复制链接",
+    "copy_link_success": "链接已复制"
 }

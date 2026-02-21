@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Loader2, Download, User, ImageIcon, Languages, Star, LogOut } from "lucide-react";
+import { Search, Loader2, Download, User, ImageIcon, Languages, Star, LogOut, Copy } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { useTranslation } from "react-i18next";
 import { PhotoProvider, PhotoView } from 'react-photo-view';
@@ -181,6 +181,16 @@ function App() {
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleCopyUrl = async (urlToCopy: string) => {
+    try {
+      await navigator.clipboard.writeText(urlToCopy);
+      showToast(t('copy_link_success'), 'success');
+    } catch (err: any) {
+      console.error('Failed to copy text: ', err);
+      showToast(t('error_download', { error: err.toString() }), 'error');
+    }
   };
 
 
@@ -429,13 +439,22 @@ function App() {
                             <span className="text-gray-500 text-sm font-medium">{t('video_quality_default')}</span>
                           )}
                         </div>
-                        <button
-                          onClick={() => handleDownload(selectedQualityUrl || result.video_url, 'video')}
-                          className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors shadow-md"
-                        >
-                          <Download size={18} />
-                          <span>{t('download_video')}</span>
-                        </button>
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                          <button
+                            onClick={() => handleCopyUrl(selectedQualityUrl || result.video_url)}
+                            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-lg font-semibold transition-colors shadow-sm border border-gray-200"
+                          >
+                            <Copy size={18} />
+                            <span>{t('copy_link')}</span>
+                          </button>
+                          <button
+                            onClick={() => handleDownload(selectedQualityUrl || result.video_url, 'video')}
+                            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors shadow-md"
+                          >
+                            <Download size={18} />
+                            <span>{t('download_video')}</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -458,7 +477,17 @@ function App() {
                                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                                   referrerPolicy="no-referrer"
                                 />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCopyUrl(img.url);
+                                    }}
+                                    className="bg-white text-gray-900 py-2 px-4 rounded-full font-bold text-sm shadow-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                                  >
+                                    <Copy size={14} />
+                                    {t('copy_link')}
+                                  </button>
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation(); // Prevent opening zoom when clicking download
