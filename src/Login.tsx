@@ -101,9 +101,11 @@ export default function Login({ onLoginSuccess }: LoginProps) {
             setLoading(true);
             try {
                 await invoke("reset_password", { username, email, newPassword });
+                setMode("login");
                 setSuccess(t("reset_success"));
                 // Clear fields
                 setNewPassword("");
+                setPassword("");
             } catch (err: any) {
                 const errStr = String(err);
                 if (errStr.includes("not found") || errStr.includes("mismatch")) {

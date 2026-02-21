@@ -102,6 +102,7 @@ impl XiGua {
                                                 video_qualities.push(VideoQuality {
                                                     quality: definition,
                                                     video_url: main_play_url,
+                                                    size: None,
                                                 });
                                             }
                                         }

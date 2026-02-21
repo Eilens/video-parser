@@ -65,5 +65,18 @@
     "profile_updated": "Profile updated successfully",
     "no_changes": "No changes to save",
     "leave_empty_keep": "Leave empty to keep current",
-    "remember_me": "Remember username and password"
+    "remember_me": "Remember username and password",
+    "video_quality_default": "Default Video",
+    "downloads": "Downloads",
+    "loading_downloads": "Loading...",
+    "no_downloads": "No download history yet",
+    "remove_record": "Remove record",
+    "downloading": "Downloading",
+    "completed": "Completed",
+    "failed": "Failed",
+    "open_file": "Open File",
+    "open_folder": "Show in Folder",
+    "delete_record_only": "Delete record only",
+    "delete_record_and_file": "Delete record & file",
+    "delete_confirm_title": "Delete Download?"
 }

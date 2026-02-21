@@ -179,14 +179,43 @@ impl DouYin {
          }
          
          let mut video_url = String::new();
+         let mut video_qualities = Vec::new();
+
          if !is_note {
-             if let Some(v_url) = json_data.get("video").and_then(|v| v.get("play_addr")).and_then(|v| v.get("url_list")).and_then(|v| v.as_array()).and_then(|arr| arr.get(0)).and_then(|v| v.as_str()) {
-                 video_url = v_url.replace("playwm", "play");
+             // Extract qualities
+             if let Some(video) = json_data.get("video") {
+                 // The default video URL
+                 if let Some(v_url) = video.get("play_addr").and_then(|v| v.get("url_list")).and_then(|v| v.as_array()).and_then(|arr| arr.get(0)).and_then(|v| v.as_str()) {
+                     video_url = v_url.replace("playwm", "play");
+                 }
+
+                 // Extract bit_rate array which contains different qualities
+                 if let Some(bit_rates) = video.get("bit_rate").and_then(|v| v.as_array()) {
+                     for br in bit_rates {
+                         let quality_desc = br.get("gear_name").and_then(|v| v.as_str()).unwrap_or("未知").to_string();
+                         let size_bytes = br.get("play_addr").and_then(|v| v.get("data_size")).and_then(|v| v.as_u64());
+                         
+                         if let Some(url_list) = br.get("play_addr").and_then(|v| v.get("url_list")).and_then(|v| v.as_array()) {
+                             if let Some(v_url) = url_list.get(0).and_then(|v| v.as_str()) {
+                                 let clean_url = v_url.replace("playwm", "play");
+                                 // Only add if not empty
+                                 if !clean_url.is_empty() {
+                                     video_qualities.push(crate::models::VideoQuality {
+                                         quality: quality_desc,
+                                         video_url: clean_url,
+                                         size: size_bytes,
+                                     });
+                                 }
+                             }
+                         }
+                     }
+                 }
              }
          }
          
          if !images.is_empty() {
              video_url = "".to_string();
+             video_qualities.clear();
          }
 
           let cover_url_list = json_data.get("video").and_then(|v| v.get("cover")).and_then(|v| v.get("url_list")).and_then(|v| v.as_array());
@@ -210,11 +239,25 @@ impl DouYin {
               cover_url,
               images,
               platform: "douyin".to_string(),
-              video_qualities: vec![],
+              video_qualities,
           };
           
           if !result.video_url.is_empty() {
               Self::get_redirect_url(&mut result).await;
+          }
+          for q in &mut result.video_qualities {
+              let mut temp_info = VideoParseInfo {
+                  video_url: q.video_url.clone(),
+                  author: result.author.clone(),
+                  title: String::new(),
+                  music_url: String::new(),
+                  cover_url: String::new(),
+                  images: vec![],
+                  platform: String::new(),
+                  video_qualities: vec![],
+              };
+              Self::get_redirect_url(&mut temp_info).await;
+              q.video_url = temp_info.video_url;
           }
           
           Ok(result)
@@ -345,14 +388,39 @@ impl DouYin {
          }
          
          let mut video_url = String::new();
+         let mut video_qualities = Vec::new();
+
          if !is_note {
-             if let Some(v_url) = json_data.get("video").and_then(|v| v.get("play_addr")).and_then(|v| v.get("url_list")).and_then(|v| v.as_array()).and_then(|arr| arr.get(0)).and_then(|v| v.as_str()) {
-                 video_url = v_url.replace("playwm", "play");
+             if let Some(video) = json_data.get("video") {
+                 if let Some(v_url) = video.get("play_addr").and_then(|v| v.get("url_list")).and_then(|v| v.as_array()).and_then(|arr| arr.get(0)).and_then(|v| v.as_str()) {
+                     video_url = v_url.replace("playwm", "play");
+                 }
+
+                 if let Some(bit_rates) = video.get("bit_rate").and_then(|v| v.as_array()) {
+                     for br in bit_rates {
+                         let quality_desc = br.get("gear_name").and_then(|v| v.as_str()).unwrap_or("未知").to_string();
+                         let size_bytes = br.get("play_addr").and_then(|v| v.get("data_size")).and_then(|v| v.as_u64());
+                         
+                         if let Some(url_list) = br.get("play_addr").and_then(|v| v.get("url_list")).and_then(|v| v.as_array()) {
+                             if let Some(v_url) = url_list.get(0).and_then(|v| v.as_str()) {
+                                 let clean_url = v_url.replace("playwm", "play");
+                                 if !clean_url.is_empty() {
+                                     video_qualities.push(crate::models::VideoQuality {
+                                         quality: quality_desc,
+                                         video_url: clean_url,
+                                         size: size_bytes,
+                                     });
+                                 }
+                             }
+                         }
+                     }
+                 }
              }
          }
          
          if !images.is_empty() {
              video_url = "".to_string();
+             video_qualities.clear();
          }
 
           let cover_url_list = json_data.get("video").and_then(|v| v.get("cover")).and_then(|v| v.get("url_list")).and_then(|v| v.as_array());
@@ -376,7 +444,7 @@ impl DouYin {
               cover_url,
               images,
               platform: "douyin".to_string(),
-              video_qualities: vec![],
+              video_qualities,
           })
     }
 

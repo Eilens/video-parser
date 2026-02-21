@@ -65,5 +65,18 @@
     "profile_updated": "资料更新成功",
     "no_changes": "没有需要更新的内容",
     "leave_empty_keep": "留空则不修改",
-    "remember_me": "记住用户名和密码"
+    "remember_me": "记住用户名和密码",
+    "video_quality_default": "默认视频",
+    "downloads": "下载历史",
+    "loading_downloads": "正在加载...",
+    "no_downloads": "暂无下载记录",
+    "remove_record": "删除记录",
+    "downloading": "下载中",
+    "completed": "已完成",
+    "failed": "下载失败",
+    "open_file": "打开文件",
+    "open_folder": "在文件夹中显示",
+    "delete_record_only": "仅删除记录",
+    "delete_record_and_file": "删除记录及文件",
+    "delete_confirm_title": "确认删除？"
 }

@@ -17,6 +17,7 @@ pub struct ImgInfo {
 pub struct VideoQuality {
     pub quality: String,
     pub video_url: String,
+    pub size: Option<u64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

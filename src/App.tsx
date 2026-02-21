@@ -11,7 +11,14 @@ import "./i18n";
 import Favorites from "./Favorites";
 import Login, { type UserInfo } from "./Login";
 import Profile from "./Profile";
+import Downloads from "./Downloads";
 
+
+export interface VideoQuality {
+  quality: string;
+  video_url: string;
+  size?: number | null;
+}
 
 interface VideoParseInfo {
   video_url: string;
@@ -24,6 +31,7 @@ interface VideoParseInfo {
   };
   images: Array<{ url: string }>;
   platform: string;
+  video_qualities?: VideoQuality[];
 }
 
 function App() {
@@ -43,10 +51,16 @@ function App() {
   // Cached video path for playback
   const [cachedVideo, setCachedVideo] = useState<string | null>(null);
 
+  // Selected video quality
+  const [selectedQualityUrl, setSelectedQualityUrl] = useState<string | null>(null);
+
   // Favorites state
   const [showFavorites, setShowFavorites] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
   const [favRefreshKey, setFavRefreshKey] = useState(0);
+
+  // Downloads state
+  const [showDownloads, setShowDownloads] = useState(false);
 
   // Profile state
   const [showProfile, setShowProfile] = useState(false);
@@ -107,6 +121,13 @@ function App() {
 
     try {
       const res = await invoke<VideoParseInfo>("parse_video", { url: targetUrl });
+      // Pre-select best quality if available, otherwise fallback to default video_url
+      if (res.video_qualities && res.video_qualities.length > 0) {
+        setSelectedQualityUrl(res.video_qualities[0].video_url);
+      } else {
+        setSelectedQualityUrl(res.video_url);
+      }
+
       setResult(res);
       // Update input if called programmatically
       if (urlArg) setUrl(targetUrl);
@@ -194,9 +215,21 @@ function App() {
 
       showToast(t('toast_downloading'), 'success');
 
-      await invoke('download_file', { url: fileUrl, savePath });
+      // Do not await, let it run in the background
+      invoke('download_file', {
+        userId: currentUser?.id || 0,
+        url: fileUrl,
+        savePath,
+        title: result?.title || '',
+        coverUrl: result?.cover_url || ''
+      }).then(() => {
+        showToast(t('toast_saved'), 'success');
+      }).catch((err) => {
+        showToast(t('error_download', { error: err }), 'error');
+      });
 
-      showToast(t('toast_saved'), 'success');
+      // Show the progress panel if not already open
+      setShowDownloads(true);
     } catch (err: any) {
       console.error(err);
       showToast(t('error_download', { error: err }), 'error');
@@ -235,6 +268,13 @@ function App() {
           >
             <User size={16} />
             <span>{currentUser.username}</span>
+          </button>
+          <button
+            onClick={() => setShowDownloads(true)}
+            className="bg-white p-2 rounded-lg shadow-sm hover:bg-green-50 flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-green-600 transition-colors"
+          >
+            <Download size={18} />
+            <span>{t('downloads')}</span>
           </button>
           <button
             onClick={() => setShowFavorites(true)}
@@ -365,16 +405,33 @@ function App() {
                         <video
                           {...({ referrerPolicy: "no-referrer" } as any)}
                           controls
-                          src={cachedVideo || result.video_url}
+                          src={cachedVideo || selectedQualityUrl || result.video_url}
                           className="w-full h-full object-contain cursor-pointer"
                           poster={result.cover_url}
                           onClick={(e) => e.currentTarget.requestFullscreen()}
                         />
                       </div>
-                      <div className="flex justify-end">
+                      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <div className="flex items-center gap-3 w-full sm:w-auto">
+                          {result.video_qualities && result.video_qualities.length > 0 ? (
+                            <select
+                              value={selectedQualityUrl || ''}
+                              onChange={(e) => setSelectedQualityUrl(e.target.value)}
+                              className="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full sm:w-auto p-2.5 outline-none shadow-sm cursor-pointer"
+                            >
+                              {result.video_qualities.map((q: VideoQuality, idx: number) => (
+                                <option key={idx} value={q.video_url}>
+                                  {q.quality} {q.size ? `(${((q.size) / (1024 * 1024)).toFixed(2)} MB)` : ''}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span className="text-gray-500 text-sm font-medium">{t('video_quality_default')}</span>
+                          )}
+                        </div>
                         <button
-                          onClick={() => handleDownload(result.video_url, 'video')}
-                          className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors shadow-sm"
+                          onClick={() => handleDownload(selectedQualityUrl || result.video_url, 'video')}
+                          className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors shadow-md"
                         >
                           <Download size={18} />
                           <span>{t('download_video')}</span>
@@ -459,6 +516,15 @@ function App() {
             handleParse(selectedUrl);
           }}
           refreshKey={favRefreshKey}
+          userId={currentUser.id}
+        />
+      </AnimatePresence>
+
+      {/* Downloads Panel */}
+      <AnimatePresence>
+        <Downloads
+          visible={showDownloads}
+          onClose={() => setShowDownloads(false)}
           userId={currentUser.id}
         />
       </AnimatePresence>

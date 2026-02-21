@@ -1,16 +1,17 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-mod models;
-mod parser;
+pub mod models;
+pub mod parser;
 mod db;
 mod favorites;
 mod auth;
+mod downloads;
 
 use crate::models::VideoParseInfo;
 use crate::parser::{douyin::DouYin, xhs::Xiaohongshu, pipixia::PiPiXia, weibo::Weibo, kuaishou::Kuaishou, bilibili::Bilibili, xigua::XiGua};
-use tauri::Manager;
+use tauri::{Manager, Emitter};
 
 #[tauri::command]
-async fn parse_video(app: tauri::AppHandle, url: String) -> Result<VideoParseInfo, String> {
+async fn parse_video(_app: tauri::AppHandle, url: String) -> Result<VideoParseInfo, String> {
     if url.contains("douyin.com") || url.contains("iesdouyin.com") {
         // Use HTTP-based parsing (no webview needed)
         DouYin::parse_share_url(&url).await.map_err(|e| e.to_string())
@@ -32,23 +33,147 @@ async fn parse_video(app: tauri::AppHandle, url: String) -> Result<VideoParseInf
     }
 }
 
+#[derive(Clone, serde::Serialize)]
+struct DownloadProgressPayload {
+    id: i64,
+    downloaded: u64,
+    total: Option<u64>,
+    status: String,
+}
+
 #[tauri::command]
-async fn download_file(url: String, save_path: String) -> Result<String, String> {
+async fn download_file(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, db::DbState>,
+    user_id: i64,
+    url: String, 
+    save_path: String,
+    title: String,
+    cover_url: String,
+) -> Result<String, String> {
     use std::io::Write;
+    use futures_util::StreamExt;
+    
+    // Create record in DB
+    let download_id = {
+        let mut conn = state.0.lock().map_err(|e| e.to_string())?;
+        downloads::create_download_record(
+            &mut conn,
+            user_id,
+            &url,
+            &title,
+            &cover_url,
+            &save_path,
+            "downloading",
+        ).map_err(|e| e.to_string())?
+    };
+
+    // Broadcast initial state
+    let _ = app.emit("download://progress", DownloadProgressPayload {
+        id: download_id,
+        downloaded: 0,
+        total: None,
+        status: "downloading".to_string(),
+    });
 
     let client = reqwest::Client::new();
     let res = client.get(&url)
         .header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         .send()
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            // Update DB on error
+            let mut conn = state.0.lock().unwrap();
+            let _ = downloads::update_download_progress(&mut conn, download_id, 0, 0, "failed");
+            e.to_string()
+        })?;
 
-    let content = res.bytes().await.map_err(|e| e.to_string())?;
-    
+    let total_size = res.content_length();
     let mut file = std::fs::File::create(&save_path).map_err(|e| e.to_string())?;
-    file.write_all(&content).map_err(|e| e.to_string())?;
+    
+    let mut downloaded: u64 = 0;
+    let mut stream = res.bytes_stream();
+    
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(|e| {
+            let mut conn = state.0.lock().unwrap();
+            let _ = downloads::update_download_progress(&mut conn, download_id, downloaded as i64, total_size.unwrap_or(0) as i64, "failed");
+            e.to_string()
+        })?;
+        
+        file.write_all(&chunk).map_err(|e| {
+            let mut conn = state.0.lock().unwrap();
+            let _ = downloads::update_download_progress(&mut conn, download_id, downloaded as i64, total_size.unwrap_or(0) as i64, "failed");
+            e.to_string()
+        })?;
+        
+        downloaded += chunk.len() as u64;
+        
+        // Every chunk, maybe debounce this in real production
+        let _ = app.emit("download://progress", DownloadProgressPayload {
+            id: download_id,
+            downloaded,
+            total: total_size,
+            status: "downloading".to_string(),
+        });
+    }
+
+    // Finished
+    {
+        let mut conn = state.0.lock().unwrap();
+        let _ = downloads::update_download_progress(&mut conn, download_id, downloaded as i64, total_size.unwrap_or(downloaded) as i64, "completed");
+    }
+    
+    let _ = app.emit("download://progress", DownloadProgressPayload {
+        id: download_id,
+        downloaded,
+        total: total_size,
+        status: "completed".to_string(),
+    });
 
     Ok(save_path)
+}
+
+#[tauri::command]
+fn open_path(path: String) -> Result<(), String> {
+    use std::process::Command;
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "windows")]
+    {
+         Command::new("explorer")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn reveal_path(path: String) -> Result<(), String> {
+    use std::process::Command;
+    #[cfg(target_os = "macos")]
+    {
+        Command::new("open")
+            .arg("-R")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "windows")]
+    {
+         Command::new("explorer")
+            .arg("/select,")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 // Proxy image through backend to bypass hotlink protection
@@ -163,7 +288,11 @@ pub fn run() {
             auth::register,
             auth::login,
             auth::update_profile,
-            auth::reset_password
+            auth::reset_password,
+            downloads::get_downloads,
+            downloads::remove_download_record,
+            open_path,
+            reveal_path
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
