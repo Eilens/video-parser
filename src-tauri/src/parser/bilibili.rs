@@ -90,11 +90,15 @@ impl Bilibili {
             },
             title,
             video_url,
+            music_url: "".to_string(),
             cover_url: pic,
             images: vec![],
             platform: "bilibili".to_string(),
-            music_url: "".to_string(),
             video_qualities: vec![],
+            statistics: None,
+            tags: None,
+            music_info: None,
+            create_time: None,
         })
     }
     

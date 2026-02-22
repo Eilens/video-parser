@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Loader2, Download, User, ImageIcon, Languages, Star, LogOut, Copy, Clock, Cloud, Sun, Moon, Monitor, Settings, ChevronDown } from "lucide-react";
+import { Search, Loader2, Download, User, ImageIcon, Languages, Star, LogOut, Copy, Clock, Cloud, Sun, Moon, Monitor, Settings, ChevronDown, Heart, Eye, Share2 } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { useTranslation } from "react-i18next";
 import { PhotoProvider, PhotoView } from 'react-photo-view';
@@ -20,6 +20,21 @@ export interface VideoQuality {
   size?: number | null;
 }
 
+interface VideoStatistics {
+  likes?: number;
+  views?: number;
+  favorites?: number;
+  shares?: number;
+  comments?: number;
+}
+
+interface MusicInfo {
+  title: string;
+  author: string;
+  url: string;
+  cover_url: string;
+}
+
 interface VideoParseInfo {
   video_url: string;
   cover_url: string;
@@ -32,6 +47,10 @@ interface VideoParseInfo {
   images: Array<{ url: string }>;
   platform: string;
   video_qualities?: VideoQuality[];
+  statistics?: VideoStatistics;
+  tags?: string[];
+  music_info?: MusicInfo;
+  create_time?: number;
 }
 
 function App() {
@@ -105,22 +124,36 @@ function App() {
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     // Fetch weather data
-    invoke<any>("get_weather").then(data => {
-      console.log("Weather data returned from Rust:", data);
-      if (data && data.weather) {
-        setWeatherInfo({
-          temp: data.weather.temperature,
-          weather: data.weather.weather,
-          city: data.position && data.position.city ? data.position.city : (data.city || '未知')
-        });
+    try {
+      // @ts-ignore
+      if (window.__TAURI__) {
+        invoke<any>("get_weather").then(data => {
+          console.log("Weather data returned from Rust:", data);
+          if (data && data.weather) {
+            setWeatherInfo({
+              temp: data.weather.temperature,
+              weather: data.weather.weather,
+              city: data.position && data.position.city ? data.position.city : (data.city || '未知')
+            });
+          }
+        }).catch(err => console.error("Failed to fetch weather:", err));
       }
-    }).catch(err => console.error("Failed to fetch weather:", err));
+    } catch (e) {
+      console.warn("Tauri API not available", e);
+    }
     return () => clearInterval(timer);
   }, []);
 
   // Update window title when language changes
   useEffect(() => {
-    getCurrentWindow().setTitle(t('app_title'));
+    try {
+      // @ts-ignore
+      if (window.__TAURI__) {
+        getCurrentWindow().setTitle(t('app_title'));
+      }
+    } catch (e) {
+      console.warn("Tauri API not available", e);
+    }
   }, [i18n.language, t]);
 
   // Proxy images for Weibo platform
@@ -523,29 +556,112 @@ function App() {
                     {result.author.name}
                     <User size={16} className="text-gray-400" />
                   </h3>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm font-mono">{t('uid')}: {result.author.uid}</p>
+                  <div className="text-gray-500 dark:text-gray-400 text-sm font-mono flex items-center gap-4">
+                    <span>{t('uid')}: {result.author.uid}</span>
+                    {result.create_time && (
+                      <span className="flex items-center gap-1 opacity-80">
+                        <Clock size={14} />
+                        {new Date(result.create_time * 1000).toLocaleString(i18n.language.startsWith('zh') ? 'zh-CN' : 'en-US')}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
               {/* Media Content */}
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors">
-                <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex items-start justify-between gap-3 transition-colors">
-                  <p className="text-gray-800 dark:text-gray-200 text-lg leading-relaxed whitespace-pre-wrap flex-1">
-                    {result.title}
-                  </p>
-                  <button
-                    onClick={handleToggleFavorite}
-                    className={`flex-shrink-0 p-2.5 rounded-xl transition-all ${isFavorited
-                      ? 'bg-amber-50 dark:bg-amber-900/40 text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/60'
-                      : 'bg-gray-50 dark:bg-gray-700 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-amber-500 dark:hover:text-amber-400'
-                      }`}
-                    title={isFavorited ? t('remove_favorite') : t('add_favorite')}
-                  >
-                    <Star size={22} className={isFavorited ? 'fill-amber-500' : ''} />
-                  </button>
+                <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex flex-col gap-3 transition-colors">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-gray-800 dark:text-gray-200 text-lg leading-relaxed whitespace-pre-wrap flex-1">
+                      {result.title}
+                    </p>
+                    <button
+                      onClick={handleToggleFavorite}
+                      className={`flex-shrink-0 p-2.5 rounded-xl transition-all ${isFavorited
+                        ? 'bg-amber-50 dark:bg-amber-900/40 text-amber-500 hover:bg-amber-100 dark:hover:bg-amber-900/60'
+                        : 'bg-gray-50 dark:bg-gray-700 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-amber-500 dark:hover:text-amber-400'
+                        }`}
+                      title={isFavorited ? t('remove_favorite') : t('add_favorite')}
+                    >
+                      <Star size={22} className={isFavorited ? 'fill-amber-500' : ''} />
+                    </button>
+                  </div>
+                  {result.tags && result.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {result.tags.map((tag, idx) => (
+                        <span key={idx} className="text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-md text-sm font-medium">#{tag}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
+                {result.statistics && (
+                  <div className="px-5 pt-4 pb-1 border-b border-gray-100/50 dark:border-gray-700/50 flex flex-wrap gap-3">
+                    {result.statistics.likes !== undefined && (
+                      <div className="flex items-center gap-1.5 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 px-3 py-1.5 rounded-full border border-rose-100 dark:border-rose-900/30 text-sm font-medium transition-colors">
+                        <Heart size={14} className="fill-current opacity-80" />
+                        <span>{result.statistics.likes.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {result.statistics.views !== undefined && (
+                      <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-full border border-blue-100 dark:border-blue-900/30 text-sm font-medium transition-colors">
+                        <Eye size={14} className="opacity-80" />
+                        <span>{result.statistics.views.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {result.statistics.favorites !== undefined && (
+                      <div className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 px-3 py-1.5 rounded-full border border-amber-100 dark:border-amber-900/30 text-sm font-medium transition-colors">
+                        <Star size={14} className="fill-current opacity-80" />
+                        <span>{result.statistics.favorites.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {result.statistics.shares !== undefined && (
+                      <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-900/30 text-sm font-medium transition-colors">
+                        <Share2 size={14} className="opacity-80" />
+                        <span>{result.statistics.shares.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {result.statistics.comments !== undefined && (
+                      <div className="flex items-center gap-1.5 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 px-3 py-1.5 rounded-full border border-purple-100 dark:border-purple-900/30 text-sm font-medium transition-colors">
+                        <i className="lucide lucide-message-circle w-3.5 h-3.5 opacity-80">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z" /></svg>
+                        </i>
+                        <span>{result.statistics.comments.toLocaleString()}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="p-5 space-y-6">
+                  {/* Music Info */}
+                  {result.music_info && (
+                    <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/80 p-3 rounded-lg border border-gray-100 dark:border-gray-700 shrink-0 mx-0 mt-0">
+                      <div className="flex items-center gap-3">
+                        {result.music_info.cover_url ? (
+                          <img src={result.music_info.cover_url} className="w-12 h-12 rounded-lg object-cover shadow-sm bg-gray-200" alt="Music Cover" referrerPolicy="no-referrer" />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center shrink-0">
+                            <span className="text-gray-400">🎵</span>
+                          </div>
+                        )}
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{result.music_info.title || t('music')}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">{result.music_info.author}</span>
+                        </div>
+                      </div>
+                      {result.music_info.url && (
+                        <button
+                          onClick={() => handleDownload(result.music_info!.url, 'audio')}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-md text-sm text-gray-700 dark:text-gray-300 font-medium transition-colors shadow-sm"
+                          title={t('download_music') || 'Download Music'}
+                        >
+                          <Download size={14} />
+                          <span className="hidden sm:inline">{t('download_music') || 'Download Music'}</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+
                   {/* Video Player */}
                   {result.video_url && (
                     <div className="space-y-4">
@@ -650,63 +766,66 @@ function App() {
                   {result.cover_url && !result.video_url && result.images.length === 0 && (
                     <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                       <h3 className="font-semibold text-gray-700 dark:text-gray-300">{t('cover_image')}</h3>
-                      <img src={result.cover_url} className="rounded-lg w-full max-w-md shadow-md border border-gray-200 dark:border-gray-700" />
+                      <img src={result.cover_url} className="rounded-lg w-full max-w-md shadow-md border border-gray-200 dark:border-gray-700" alt="Cover" />
                     </div>
                   )}
                 </div>
               </div>
             </motion.div>
-          ) : null}
-        </AnimatePresence>
+          ) : null
+          }
+        </AnimatePresence >
 
         {/* Toast Notification */}
         <AnimatePresence>
-          {toast && (
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 50 }}
-              className={`fixed bottom-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl font-medium text-white ${toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'}`}
-            >
-              {toast.message}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+          {
+            toast && (
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 50 }}
+                className={`fixed bottom-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl font-medium text-white ${toast.type === 'error' ? 'bg-red-600' : 'bg-green-600'}`}
+              >
+                {toast.message}
+              </motion.div>
+            )
+          }
+        </AnimatePresence >
+      </div >
 
       {/* Favorites Panel */}
-      <AnimatePresence>
+      < AnimatePresence >
         <Favorites
           visible={showFavorites}
           onClose={() => setShowFavorites(false)}
-          onSelect={(selectedUrl) => {
+          onSelect={(selectedUrl: string) => {
             setUrl(selectedUrl);
             handleParse(selectedUrl);
           }}
           refreshKey={favRefreshKey}
           userId={currentUser.id}
         />
-      </AnimatePresence>
+      </AnimatePresence >
 
       {/* Downloads Panel */}
-      <AnimatePresence>
+      < AnimatePresence >
         <Downloads
           visible={showDownloads}
           onClose={() => setShowDownloads(false)}
           userId={currentUser.id}
         />
-      </AnimatePresence>
+      </AnimatePresence >
 
       {/* Profile Modal */}
-      <AnimatePresence>
+      < AnimatePresence >
         <Profile
           visible={showProfile}
           user={currentUser}
           onClose={() => setShowProfile(false)}
-          onUpdated={(updatedUser) => setCurrentUser(updatedUser)}
+          onUpdated={(updatedUser: UserInfo) => setCurrentUser(updatedUser)}
         />
-      </AnimatePresence>
-    </div>
+      </AnimatePresence >
+    </div >
   );
 }
 

@@ -81,7 +81,7 @@ impl DouYin {
         Err(anyhow!("parse video id from path fail"))
     }
 
-    async fn parse_video_id(video_id: &str) -> Result<VideoParseInfo> {
+    pub async fn parse_video_id(video_id: &str) -> Result<VideoParseInfo> {
         let req_url = format!("https://www.douyin.com/share/video/{}", video_id);
         let client = Client::new();
         
@@ -231,6 +231,44 @@ impl DouYin {
               avatar: json_data.get("author").and_then(|v| v.get("avatar_thumb")).and_then(|v| v.get("url_list")).and_then(|v| v.as_array()).and_then(|arr| arr.get(0)).and_then(|v| v.as_str()).unwrap_or("").to_string(),
           };
 
+          let statistics = json_data.get("statistics").map(|v| crate::models::VideoStatistics {
+              likes: v.get("digg_count").and_then(|c| c.as_u64()),
+              views: v.get("play_count").and_then(|c| c.as_u64()),
+              favorites: v.get("collect_count").and_then(|c| c.as_u64()),
+              shares: v.get("share_count").and_then(|c| c.as_u64()),
+              comments: v.get("comment_count").and_then(|c| c.as_u64()),
+          });
+
+          let mut tags = Vec::new();
+          if let Some(text_extras) = json_data.get("text_extra").and_then(|v| v.as_array()) {
+              for extra in text_extras {
+                  if let Some(tag_name) = extra.get("hashtag_name").and_then(|v| v.as_str()) {
+                       if !tag_name.is_empty() {
+                           tags.push(tag_name.to_string());
+                       }
+                  }
+              }
+          }
+
+          let create_time = json_data.get("create_time").and_then(|v| v.as_u64());
+
+          let mut music_info = None;
+          if let Some(music) = json_data.get("music") {
+              let m_title = music.get("title").and_then(|v| v.as_str()).unwrap_or("").to_string();
+              let m_author = music.get("author").and_then(|v| v.as_str()).unwrap_or("").to_string();
+              let m_url = music.get("play_url").and_then(|v| v.get("url_list")).and_then(|v| v.as_array()).and_then(|a| a.get(0)).and_then(|v| v.as_str()).unwrap_or("").to_string();
+              let m_cover = music.get("cover_large").and_then(|v| v.get("url_list")).and_then(|v| v.as_array()).and_then(|a| a.get(0)).and_then(|v| v.as_str()).unwrap_or("").to_string();
+              
+              if !m_url.is_empty() {
+                  music_info = Some(crate::models::MusicInfo {
+                      title: m_title,
+                      author: m_author,
+                      url: m_url,
+                      cover_url: m_cover,
+                  });
+              }
+          }
+
           let mut result = VideoParseInfo {
               author,
               title: desc,
@@ -240,6 +278,10 @@ impl DouYin {
               images,
               platform: "douyin".to_string(),
               video_qualities,
+              statistics,
+              tags: Some(tags),
+              music_info,
+              create_time,
           };
           
           if !result.video_url.is_empty() {
@@ -255,6 +297,10 @@ impl DouYin {
                   images: vec![],
                   platform: String::new(),
                   video_qualities: vec![],
+                  statistics: None,
+                  tags: None,
+                  music_info: None,
+                  create_time: None,
               };
               Self::get_redirect_url(&mut temp_info).await;
               q.video_url = temp_info.video_url;
@@ -436,6 +482,44 @@ impl DouYin {
               avatar: json_data.get("author").and_then(|v| v.get("avatar_thumb")).and_then(|v| v.get("url_list")).and_then(|v| v.as_array()).and_then(|arr| arr.get(0)).and_then(|v| v.as_str()).unwrap_or("").to_string(),
           };
 
+          let statistics = json_data.get("statistics").map(|v| crate::models::VideoStatistics {
+              likes: v.get("digg_count").and_then(|c| c.as_u64()),
+              views: v.get("play_count").and_then(|c| c.as_u64()),
+              favorites: v.get("collect_count").and_then(|c| c.as_u64()),
+              shares: v.get("share_count").and_then(|c| c.as_u64()),
+              comments: v.get("comment_count").and_then(|c| c.as_u64()),
+          });
+
+          let mut tags = Vec::new();
+          if let Some(text_extras) = json_data.get("text_extra").and_then(|v| v.as_array()) {
+              for extra in text_extras {
+                  if let Some(tag_name) = extra.get("hashtag_name").and_then(|v| v.as_str()) {
+                       if !tag_name.is_empty() {
+                           tags.push(tag_name.to_string());
+                       }
+                  }
+              }
+          }
+
+          let create_time = json_data.get("create_time").and_then(|v| v.as_u64());
+
+          let mut music_info = None;
+          if let Some(music) = json_data.get("music") {
+              let m_title = music.get("title").and_then(|v| v.as_str()).unwrap_or("").to_string();
+              let m_author = music.get("author").and_then(|v| v.as_str()).unwrap_or("").to_string();
+              let m_url = music.get("play_url").and_then(|v| v.get("url_list")).and_then(|v| v.as_array()).and_then(|a| a.get(0)).and_then(|v| v.as_str()).unwrap_or("").to_string();
+              let m_cover = music.get("cover_large").and_then(|v| v.get("url_list")).and_then(|v| v.as_array()).and_then(|a| a.get(0)).and_then(|v| v.as_str()).unwrap_or("").to_string();
+              
+              if !m_url.is_empty() {
+                  music_info = Some(crate::models::MusicInfo {
+                      title: m_title,
+                      author: m_author,
+                      url: m_url,
+                      cover_url: m_cover,
+                  });
+              }
+          }
+
           Ok(VideoParseInfo {
               author,
               title: desc,
@@ -445,6 +529,10 @@ impl DouYin {
               images,
               platform: "douyin".to_string(),
               video_qualities,
+              statistics,
+              tags: Some(tags),
+              music_info,
+              create_time,
           })
     }
 

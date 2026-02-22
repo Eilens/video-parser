@@ -169,6 +169,10 @@ impl Kuaishou {
             platform: "kuaishou".to_string(),
             music_url: "".to_string(),
             video_qualities: vec![],
+            statistics: None,
+            tags: None,
+            music_info: None,
+            create_time: None,
         })
     }
 }

@@ -84,5 +84,12 @@
     "settings": "Settings",
     "light_mode": "Light Mode",
     "dark_mode": "Dark Mode",
-    "system_mode": "System Default"
+    "system_mode": "System Default",
+    "stats_likes": "Likes",
+    "stats_views": "Views",
+    "stats_favorites": "Favorites",
+    "stats_shares": "Shares",
+    "stats_comments": "Comments",
+    "music": "Music",
+    "download_music": "Download Music"
 }

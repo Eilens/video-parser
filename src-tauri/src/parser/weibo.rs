@@ -107,6 +107,10 @@ impl Weibo {
             images: vec![],
             platform: "weibo".to_string(),
             video_qualities: vec![],
+            statistics: None,
+            tags: None,
+            music_info: None,
+            create_time: None,
         })
     }
 
@@ -285,6 +289,10 @@ impl Weibo {
             platform: "weibo".to_string(),
             music_url: "".to_string(),
             video_qualities: vec![],
+            statistics: None,
+            tags: None,
+            music_info: None,
+            create_time: None,
         })
     }
 
@@ -351,6 +359,10 @@ impl Weibo {
             images,
             platform: "weibo".to_string(),
             video_qualities: vec![],
+            statistics: None,
+            tags: None,
+            music_info: None,
+            create_time: None,
         })
     }
 

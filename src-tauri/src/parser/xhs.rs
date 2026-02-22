@@ -137,6 +137,10 @@ impl Xiaohongshu {
             images,
             platform: "xhs".to_string(),
             video_qualities: vec![],
+            statistics: None,
+            tags: None,
+            music_info: None,
+            create_time: None,
         })
     }
 

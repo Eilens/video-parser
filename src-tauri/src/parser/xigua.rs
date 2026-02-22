@@ -152,6 +152,10 @@ impl XiGua {
             images: vec![],
             platform: "xigua".to_string(),
             video_qualities,
+            statistics: None,
+            tags: None,
+            music_info: None,
+            create_time: None,
         })
     }
 }
