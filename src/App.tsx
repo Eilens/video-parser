@@ -3,7 +3,7 @@ import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Loader2, Download, User, ImageIcon, Languages, Star, LogOut, Copy, Clock, Cloud, Sun, Moon, Monitor, Settings, ChevronDown, Heart, Eye, Share2 } from "lucide-react";
-import { save } from "@tauri-apps/plugin-dialog";
+import { save, open } from "@tauri-apps/plugin-dialog";
 import { useTranslation } from "react-i18next";
 import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
@@ -325,6 +325,58 @@ function App() {
       });
 
       // Show the progress panel if not already open
+      setShowDownloads(true);
+    } catch (err: any) {
+      console.error(err);
+      showToast(t('error_download', { error: err }), 'error');
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    if (!result || !result.images.length) return;
+    try {
+      const selectedPath = await open({
+        directory: true,
+        multiple: false,
+      });
+      if (!selectedPath) return;
+
+      showToast(t('toast_downloading'), 'success');
+
+      const isWindows = typeof selectedPath === 'string' && selectedPath.includes('\\');
+      const separator = isWindows ? '\\' : '/';
+
+      for (let i = 0; i < result.images.length; i++) {
+        const img = result.images[i];
+        let ext = 'jpeg';
+        try {
+          const urlPath = new URL(img.url).pathname;
+          const urlExt = urlPath.split('.').pop()?.toLowerCase();
+          if (urlExt && ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(urlExt)) {
+            ext = urlExt;
+          }
+        } catch { /* use default ext */ }
+
+        const timestamp = new Date().getTime();
+        let safeTitle = result.title ? result.title.replace(/[\\/:*?"<>|\r\n]/g, '').trim() : '';
+        if (safeTitle.length > 40) safeTitle = safeTitle.substring(0, 40);
+        const prefix = safeTitle ? `${safeTitle}_` : `${result.platform || 'media'}_`;
+        const filename = `${prefix}image_${timestamp}_${i + 1}.${ext}`;
+
+        const savePath = `${selectedPath}${typeof selectedPath === 'string' && selectedPath.endsWith(separator) ? '' : separator}${filename}`;
+
+        invoke('download_file', {
+          userId: currentUser?.id || 0,
+          url: img.url,
+          savePath,
+          title: result.title || `Image ${i + 1}`,
+          coverUrl: img.url
+        }).catch((err) => {
+          console.error(`Failed to download image ${i}:`, err);
+        });
+      }
+
+      showToast(t('toast_saved'), 'success');
       setShowDownloads(true);
     } catch (err: any) {
       console.error(err);
@@ -717,10 +769,21 @@ function App() {
                   {/* Image Gallery */}
                   {result.images.length > 0 && (
                     <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                      <h3 className="font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                        <ImageIcon size={20} />
-                        <span>{t('gallery')} ({result.images.length})</span>
-                      </h3>
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                          <ImageIcon size={20} />
+                          <span>{t('gallery')} ({result.images.length})</span>
+                        </h3>
+                        {result.images.length > 1 && (
+                          <button
+                            onClick={handleDownloadAll}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/40 hover:bg-blue-100 dark:hover:bg-blue-800/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-md text-sm font-medium transition-colors shadow-sm cursor-pointer"
+                          >
+                            <Download size={14} />
+                            <span>{t('download_all') || 'Download All'}</span>
+                          </button>
+                        )}
+                      </div>
                       <PhotoProvider>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                           {result.images.map((img, idx) => (

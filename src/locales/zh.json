@@ -91,5 +91,12 @@
     "stats_shares": "转发",
     "stats_comments": "评论",
     "music": "原声音乐",
-    "download_music": "下载音乐"
+    "download_music": "下载音乐",
+    "download_all": "下载全部",
+    "batch_delete": "批量删除",
+    "cancel": "取消",
+    "select_all": "全选",
+    "selected": "已选择",
+    "delete_selected_confirm": "确定删除这 {{count}} 项吗？",
+    "delete": "删除"
 }

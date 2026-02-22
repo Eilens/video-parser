@@ -14,7 +14,8 @@
     {
       "identifier": "fs:scope",
       "allow": [
-        "$TEMP/**"
+        "$TEMP/**",
+        "**"
       ]
     }
   ]

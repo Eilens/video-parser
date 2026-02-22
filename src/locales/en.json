@@ -91,5 +91,12 @@
     "stats_shares": "Shares",
     "stats_comments": "Comments",
     "music": "Music",
-    "download_music": "Download Music"
+    "download_music": "Download Music",
+    "download_all": "Download All",
+    "batch_delete": "Batch Delete",
+    "cancel": "Cancel",
+    "select_all": "Select All",
+    "selected": "selected",
+    "delete_selected_confirm": "Delete {{count}} items?",
+    "delete": "Delete"
 }
