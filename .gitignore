@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Video Parser Debug Artifacts
+debug_*.html
+test_*.html
+*_data.json
+*_video.json
+*_profile_debug.html
+*_response.json
+raw_body.html
+toutiao_article.html
+toutiao_full.json
+xigua_www.html
